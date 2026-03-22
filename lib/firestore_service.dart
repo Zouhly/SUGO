@@ -12,8 +12,14 @@ class FirestoreService {
   FirestoreService._();
   static final FirestoreService instance = FirestoreService._();
 
-  /// Root Firestore instance.
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  /// Root Firestore instance (lazy, overridable for testing).
+  FirebaseFirestore? _dbOverride;
+  FirebaseFirestore get _db => _dbOverride ?? FirebaseFirestore.instance;
+
+  /// Allows replacing the Firestore instance (used in tests).
+  // ignore: use_setters_to_change_properties
+  void setFirestoreInstance(FirebaseFirestore firestore) =>
+      _dbOverride = firestore;
 
   /// Reference to the "products" collection.
   CollectionReference get _productsRef => _db.collection('products');
