@@ -31,6 +31,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/out/
 /coverage/
 
 # Symbolication related
@@ -49,6 +50,7 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
 firebase.json
+firestore.rules
 
 # Environment files
 .env
