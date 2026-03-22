@@ -5,6 +5,7 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'models.dart';
 
 class FirestoreService {
@@ -21,11 +22,21 @@ class FirestoreService {
   void setFirestoreInstance(FirebaseFirestore firestore) =>
       _dbOverride = firestore;
 
-  /// Reference to the "products" collection.
-  CollectionReference get _productsRef => _db.collection('products');
+  /// Override the UID used for scoping data (used in tests).
+  String? _uidOverride;
+  void setUid(String uid) => _uidOverride = uid;
 
-  /// Reference to the "scanLogs" collection.
-  CollectionReference get _scanLogsRef => _db.collection('scanLogs');
+  /// Current user's UID — determines the data scope.
+  String get _uid => _uidOverride ?? FirebaseAuth.instance.currentUser!.uid;
+
+  /// User-scoped document: /users/{uid}
+  DocumentReference get _userDoc => _db.collection('users').doc(_uid);
+
+  /// Reference to the user's "products" sub-collection.
+  CollectionReference get _productsRef => _userDoc.collection('products');
+
+  /// Reference to the user's "scanLogs" sub-collection.
+  CollectionReference get _scanLogsRef => _userDoc.collection('scanLogs');
 
   // ── Products ───────────────────────────────────────────────────────
 

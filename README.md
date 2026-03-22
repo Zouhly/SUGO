@@ -60,7 +60,7 @@ Scan a barcode. Track your stock. Never run out again.
 ### Prerequisites
 
 - Flutter SDK ≥ 3.11.3
-- A Firebase project with Firestore enabled
+- A Firebase project with **Firestore** and **Anonymous Authentication** enabled
 - Physical device or emulator with camera access (for scanning)
 
 ### Setup
@@ -77,10 +77,21 @@ flutter pub get
 #    - android/app/google-services.json
 #    - ios/Runner/GoogleService-Info.plist
 #    - lib/firebase_options.dart
+#
+#    You can generate these with the FlutterFire CLI:
+#      flutterfire configure
 
-# 4. Run the app
+# 4. Deploy Firestore security rules
+firebase deploy --only firestore:rules
+
+# 5. Run the app
 flutter run
 ```
+
+> **Multi-user note:** The app uses Firebase Anonymous Authentication to
+> isolate each user's data. Every device that runs the app automatically
+> gets a unique account and its own private inventory — no code changes
+> required.
 
 ### Running Tests
 

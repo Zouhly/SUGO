@@ -7,11 +7,22 @@ void main() {
   late FakeFirebaseFirestore fakeFirestore;
   late FirestoreService service;
 
+  const testUid = 'test-uid';
+
   setUp(() {
     fakeFirestore = FakeFirebaseFirestore();
     service = FirestoreService.instance;
     service.setFirestoreInstance(fakeFirestore);
+    service.setUid(testUid);
   });
+
+  /// Helper to get the user-scoped products collection.
+  CollectionReference<Map<String, dynamic>> productsCol() =>
+      fakeFirestore.collection('users').doc(testUid).collection('products');
+
+  /// Helper to get the user-scoped scanLogs collection.
+  CollectionReference<Map<String, dynamic>> scanLogsCol() =>
+      fakeFirestore.collection('users').doc(testUid).collection('scanLogs');
 
   group('streamProducts', () {
     test('emits empty list when no products exist', () async {
@@ -20,7 +31,7 @@ void main() {
     });
 
     test('emits products ordered by name', () async {
-      await fakeFirestore.collection('products').add({
+      await productsCol().add({
         'barcode': '2',
         'name': 'Banana',
         'category': 'Fruit',
@@ -29,7 +40,7 @@ void main() {
         'createdAt': Timestamp.now(),
         'updatedAt': Timestamp.now(),
       });
-      await fakeFirestore.collection('products').add({
+      await productsCol().add({
         'barcode': '1',
         'name': 'Apple',
         'category': 'Fruit',
@@ -53,7 +64,7 @@ void main() {
     });
 
     test('returns product matching the barcode', () async {
-      await fakeFirestore.collection('products').add({
+      await productsCol().add({
         'barcode': 'ABC123',
         'name': 'Milk',
         'category': 'Dairy',
@@ -107,7 +118,7 @@ void main() {
 
   group('incrementQuantity', () {
     test('increases quantity by 1 by default', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'INC1',
         'name': 'Juice',
         'category': 'Drinks',
@@ -119,15 +130,12 @@ void main() {
 
       await service.incrementQuantity(docRef.id);
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect((doc.data()!)['quantity'], 6);
     });
 
     test('increases quantity by custom amount', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'INC2',
         'name': 'Rice',
         'category': 'Grains',
@@ -139,17 +147,14 @@ void main() {
 
       await service.incrementQuantity(docRef.id, amount: 5);
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect((doc.data()!)['quantity'], 15);
     });
   });
 
   group('decrementQuantity', () {
     test('decreases quantity by 1', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'DEC1',
         'name': 'Bread',
         'category': 'Bakery',
@@ -161,15 +166,12 @@ void main() {
 
       await service.decrementQuantity(docRef.id);
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect((doc.data()!)['quantity'], 2);
     });
 
     test('does not go below zero', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'DEC2',
         'name': 'Butter',
         'category': 'Dairy',
@@ -181,15 +183,12 @@ void main() {
 
       await service.decrementQuantity(docRef.id);
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect((doc.data()!)['quantity'], 0);
     });
 
     test('decreases by custom amount clamped to 0', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'DEC3',
         'name': 'Eggs',
         'category': 'Dairy',
@@ -201,17 +200,14 @@ void main() {
 
       await service.decrementQuantity(docRef.id, amount: 5);
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect((doc.data()!)['quantity'], 0);
     });
   });
 
   group('updateProduct', () {
     test('updates only specified fields', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'UPD1',
         'name': 'Old Name',
         'category': 'Old Cat',
@@ -223,16 +219,13 @@ void main() {
 
       await service.updateProduct(docRef.id, name: 'New Name');
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect((doc.data()!)['name'], 'New Name');
       expect((doc.data()!)['category'], 'Old Cat'); // unchanged
     });
 
     test('can update all editable fields', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'UPD2',
         'name': 'Old',
         'category': 'Old',
@@ -250,10 +243,7 @@ void main() {
         minThreshold: 3,
       );
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       final data = doc.data()!;
       expect(data['name'], 'Updated');
       expect(data['category'], 'New Cat');
@@ -265,7 +255,7 @@ void main() {
 
   group('deleteProduct', () {
     test('removes the product document', () async {
-      final docRef = await fakeFirestore.collection('products').add({
+      final docRef = await productsCol().add({
         'barcode': 'DEL1',
         'name': 'To Delete',
         'category': 'Test',
@@ -277,10 +267,7 @@ void main() {
 
       await service.deleteProduct(docRef.id);
 
-      final doc = await fakeFirestore
-          .collection('products')
-          .doc(docRef.id)
-          .get();
+      final doc = await productsCol().doc(docRef.id).get();
       expect(doc.exists, isFalse);
     });
   });
@@ -293,7 +280,7 @@ void main() {
         action: 'incremented',
       );
 
-      final snapshot = await fakeFirestore.collection('scanLogs').get();
+      final snapshot = await scanLogsCol().get();
       expect(snapshot.docs.length, 1);
 
       final data = snapshot.docs.first.data();
@@ -314,13 +301,13 @@ void main() {
       final earlier = DateTime(2026, 1, 1);
       final later = DateTime(2026, 3, 1);
 
-      await fakeFirestore.collection('scanLogs').add({
+      await scanLogsCol().add({
         'barcode': '1',
         'productName': 'First',
         'action': 'added',
         'scannedAt': Timestamp.fromDate(earlier),
       });
-      await fakeFirestore.collection('scanLogs').add({
+      await scanLogsCol().add({
         'barcode': '2',
         'productName': 'Second',
         'action': 'added',

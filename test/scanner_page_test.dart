@@ -34,10 +34,21 @@ BarcodeCapture makeBarcodeCapture(String rawValue) {
 void main() {
   late FakeFirebaseFirestore fakeFirestore;
 
+  const testUid = 'test-uid';
+
   setUp(() {
     fakeFirestore = FakeFirebaseFirestore();
     FirestoreService.instance.setFirestoreInstance(fakeFirestore);
+    FirestoreService.instance.setUid(testUid);
   });
+
+  /// User-scoped products collection.
+  CollectionReference<Map<String, dynamic>> productsCol() =>
+      fakeFirestore.collection('users').doc(testUid).collection('products');
+
+  /// User-scoped scanLogs collection.
+  CollectionReference<Map<String, dynamic>> scanLogsCol() =>
+      fakeFirestore.collection('users').doc(testUid).collection('scanLogs');
 
   group('ScannerPage', () {
     testWidgets('renders app bar with title', (tester) async {
@@ -64,7 +75,7 @@ void main() {
       'scanning existing product increments quantity and shows snackbar',
       (tester) async {
         // Seed an existing product
-        await fakeFirestore.collection('products').doc('p1').set({
+        await productsCol().doc('p1').set({
           'barcode': 'EXIST123',
           'name': 'Milk',
           'category': 'Dairy',
@@ -90,18 +101,18 @@ void main() {
         expect(find.textContaining('Milk'), findsOneWidget);
 
         // Quantity should be incremented in Firestore
-        final doc = await fakeFirestore.collection('products').doc('p1').get();
+        final doc = await productsCol().doc('p1').get();
         expect(doc.data()!['quantity'], 6);
 
         // Scan log should be created
-        final logs = await fakeFirestore.collection('scanLogs').get();
+        final logs = await scanLogsCol().get();
         expect(logs.docs.length, 1);
         expect(logs.docs.first.data()['action'], 'incremented');
       },
     );
 
     testWidgets('shows last scanned barcode label', (tester) async {
-      await fakeFirestore.collection('products').doc('p1').set({
+      await productsCol().doc('p1').set({
         'barcode': 'SCAN456',
         'name': 'Juice',
         'category': 'Drinks',
@@ -126,7 +137,7 @@ void main() {
     });
 
     testWidgets('shows processing indicator while scanning', (tester) async {
-      await fakeFirestore.collection('products').doc('p1').set({
+      await productsCol().doc('p1').set({
         'barcode': 'PROC789',
         'name': 'Water',
         'category': 'Drinks',
@@ -151,7 +162,7 @@ void main() {
     });
 
     testWidgets('ignores scan while still processing', (tester) async {
-      await fakeFirestore.collection('products').doc('p1').set({
+      await productsCol().doc('p1').set({
         'barcode': 'DUP001',
         'name': 'Bread',
         'category': 'Bakery',
@@ -176,7 +187,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
 
       // Should only have incremented once
-      final doc = await fakeFirestore.collection('products').doc('p1').get();
+      final doc = await productsCol().doc('p1').get();
       expect(doc.data()!['quantity'], 3);
     });
 
@@ -269,14 +280,14 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
 
       // Product should be in Firestore
-      final snapshot = await fakeFirestore.collection('products').get();
+      final snapshot = await productsCol().get();
       expect(snapshot.docs.length, 1);
       expect(snapshot.docs.first.data()['name'], 'New Item');
       expect(snapshot.docs.first.data()['category'], 'Snacks');
       expect(snapshot.docs.first.data()['barcode'], 'SAVE001');
 
       // Scan log should record 'added'
-      final logs = await fakeFirestore.collection('scanLogs').get();
+      final logs = await scanLogsCol().get();
       expect(logs.docs.length, 1);
       expect(logs.docs.first.data()['action'], 'added');
     });
@@ -299,14 +310,14 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
 
       // No product saved
-      final snapshot = await fakeFirestore.collection('products').get();
+      final snapshot = await productsCol().get();
       expect(snapshot.docs, isEmpty);
     });
 
     testWidgets('scan overlay frame changes color when processing', (
       tester,
     ) async {
-      await fakeFirestore.collection('products').doc('p1').set({
+      await productsCol().doc('p1').set({
         'barcode': 'COLOR1',
         'name': 'Test',
         'category': 'Test',

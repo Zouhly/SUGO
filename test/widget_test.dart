@@ -10,6 +10,7 @@ import 'package:food_inventory/main.dart';
 void main() {
   setUp(() {
     FirestoreService.instance.setFirestoreInstance(FakeFirebaseFirestore());
+    FirestoreService.instance.setUid('test-uid');
   });
 
   group('FoodInventoryApp', () {

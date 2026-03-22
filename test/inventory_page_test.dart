@@ -18,9 +18,15 @@ Future<void> scrollToProducts(WidgetTester tester) async {
 }
 
 /// Seeds the fake Firestore with sample products.
+/// Helper to get the user-scoped products collection.
+CollectionReference<Map<String, dynamic>> _productsCol(
+  FakeFirebaseFirestore firestore,
+) => firestore.collection('users').doc(_testUid).collection('products');
+
 Future<void> seedProducts(FakeFirebaseFirestore firestore) async {
   final now = Timestamp.now();
-  await firestore.collection('products').doc('p1').set({
+  final col = _productsCol(firestore);
+  await col.doc('p1').set({
     'barcode': '111',
     'name': 'Milk',
     'category': 'Dairy',
@@ -29,7 +35,7 @@ Future<void> seedProducts(FakeFirebaseFirestore firestore) async {
     'createdAt': now,
     'updatedAt': now,
   });
-  await firestore.collection('products').doc('p2').set({
+  await col.doc('p2').set({
     'barcode': '222',
     'name': 'Bread',
     'category': 'Bakery',
@@ -38,7 +44,7 @@ Future<void> seedProducts(FakeFirebaseFirestore firestore) async {
     'createdAt': now,
     'updatedAt': now,
   });
-  await firestore.collection('products').doc('p3').set({
+  await col.doc('p3').set({
     'barcode': '333',
     'name': 'Eggs',
     'category': 'Dairy',
@@ -49,12 +55,15 @@ Future<void> seedProducts(FakeFirebaseFirestore firestore) async {
   });
 }
 
+const _testUid = 'test-uid';
+
 void main() {
   late FakeFirebaseFirestore fakeFirestore;
 
   setUp(() {
     fakeFirestore = FakeFirebaseFirestore();
     FirestoreService.instance.setFirestoreInstance(fakeFirestore);
+    FirestoreService.instance.setUid(_testUid);
   });
 
   group('InventoryPage', () {
@@ -233,7 +242,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify the quantity was incremented in Firestore (Bread is first alphabetically)
-      final doc = await fakeFirestore.collection('products').doc('p2').get();
+      final doc = await _productsCol(fakeFirestore).doc('p2').get();
       expect(doc.data()!['quantity'], 2);
     });
 
@@ -278,7 +287,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Product still exists
-      final doc = await fakeFirestore.collection('products').doc('p2').get();
+      final doc = await _productsCol(fakeFirestore).doc('p2').get();
       expect(doc.exists, isTrue);
     });
 
@@ -302,7 +311,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Product should be deleted from Firestore
-      final doc = await fakeFirestore.collection('products').doc('p2').get();
+      final doc = await _productsCol(fakeFirestore).doc('p2').get();
       expect(doc.exists, isFalse);
     });
 
@@ -335,7 +344,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify update in Firestore
-      final doc = await fakeFirestore.collection('products').doc('p2').get();
+      final doc = await _productsCol(fakeFirestore).doc('p2').get();
       expect(doc.data()!['name'], 'Sourdough');
     });
 
@@ -358,7 +367,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Name unchanged
-      final doc = await fakeFirestore.collection('products').doc('p2').get();
+      final doc = await _productsCol(fakeFirestore).doc('p2').get();
       expect(doc.data()!['name'], 'Bread');
     });
 
