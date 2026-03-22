@@ -18,7 +18,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(materialApp.title, 'Food Inventory');
+      expect(materialApp.title, 'SUGO');
       expect(materialApp.debugShowCheckedModeBanner, isFalse);
     });
 
@@ -28,26 +28,28 @@ void main() {
 
       final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(materialApp.theme!.useMaterial3, isTrue);
-      expect(materialApp.darkTheme!.useMaterial3, isTrue);
     });
 
-    testWidgets('uses system theme mode', (tester) async {
+    testWidgets('uses light theme only', (tester) async {
       await tester.pumpWidget(const FoodInventoryApp());
       await tester.pumpAndSettle();
 
       final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(materialApp.themeMode, ThemeMode.system);
+      expect(materialApp.theme!.brightness, Brightness.light);
     });
   });
 
   group('HomePage', () {
-    testWidgets('shows bottom navigation with two tabs', (tester) async {
+    testWidgets('shows bottom navigation with FAB and two tabs', (
+      tester,
+    ) async {
       await tester.pumpWidget(const FoodInventoryApp());
       await tester.pumpAndSettle();
 
       expect(find.text('Inventory'), findsWidgets);
-      expect(find.text('Scan'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.text('Scanner'), findsOneWidget);
+      expect(find.byType(BottomAppBar), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
     });
 
     testWidgets('shows inventory icons', (tester) async {
@@ -55,30 +57,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.inventory_2), findsOneWidget);
-      expect(find.byIcon(Icons.qr_code_scanner_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.qr_code_scanner_rounded), findsOneWidget);
     });
 
     testWidgets('starts on inventory tab', (tester) async {
       await tester.pumpWidget(const FoodInventoryApp());
       await tester.pumpAndSettle();
 
-      // Inventory page should be visible (search bar present)
-      expect(find.text('Search products…'), findsOneWidget);
+      // Inventory page shows the app title
+      expect(find.text('SUGO'), findsWidgets);
+      // Empty state message visible
+      expect(find.text('No products yet'), findsOneWidget);
     });
 
-    testWidgets('navigating to Scan tab and back works', (tester) async {
+    testWidgets('navigating to Scanner tab and back works', (tester) async {
       await tester.pumpWidget(const FoodInventoryApp());
       await tester.pumpAndSettle();
 
-      // Tap Scan tab
-      await tester.tap(find.text('Scan'));
+      // Tap Scanner tab
+      await tester.tap(find.text('Scanner'));
       await tester.pump();
 
       // Tap Inventory tab again
-      await tester.tap(find.text('Inventory'));
+      await tester.tap(find.text('Inventory').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('Search products…'), findsOneWidget);
+      expect(find.text('No products yet'), findsOneWidget);
     });
 
     testWidgets('uses IndexedStack to preserve state', (tester) async {

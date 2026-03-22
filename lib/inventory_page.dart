@@ -1,13 +1,16 @@
-/// Inventory dashboard – lists all products with real-time updates.
+/// Inventory dashboard – wabi-sabi earth-inspired design.
 ///
-/// Products with quantity == 0 or below their minimum threshold are
-/// highlighted so you can restock at a glance.
+/// Features a stock-overview chart, category-coloured product cards with
+/// organic shapes, search, and quick quantity controls.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'firestore_service.dart';
 import 'models.dart';
+import 'theme.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -19,60 +22,39 @@ class InventoryPage extends StatefulWidget {
 class _InventoryPageState extends State<InventoryPage> {
   final FirestoreService _firestoreService = FirestoreService.instance;
 
-  /// Current search / filter query.
   String _searchQuery = '';
-
-  /// Selected category filter (null = show all).
   String? _categoryFilter;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventory'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-              decoration: InputDecoration(
-                hintText: 'Search products…',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-            ),
+        title: Text(
+          'SUGO',
+          style: GoogleFonts.lora(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: SugoColors.bark,
           ),
         ),
       ),
       body: StreamBuilder<List<Product>>(
         stream: _firestoreService.streamProducts(),
         builder: (context, snapshot) {
-          // ── Loading state ──
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: SugoColors.moss),
+            );
           }
 
-          // ── Error state ──
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           final allProducts = snapshot.data ?? [];
-
-          // ── Collect unique categories for the filter chips ──
           final categories = allProducts.map((p) => p.category).toSet().toList()
             ..sort();
 
-          // ── Apply filters ──
           final products = allProducts.where((p) {
             final matchesSearch =
                 _searchQuery.isEmpty ||
@@ -84,91 +66,65 @@ class _InventoryPageState extends State<InventoryPage> {
             return matchesSearch && matchesCategory;
           }).toList();
 
-          // ── Empty state ──
           if (allProducts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 80,
-                    color: Colors.grey.shade300,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No products yet',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('Scan a barcode to add your first item.'),
-                ],
-              ),
-            );
+            return _EmptyState();
           }
 
-          return Column(
-            children: [
+          return CustomScrollView(
+            slivers: [
+              // ── Search bar ──
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: _SearchBar(
+                    onChanged: (v) =>
+                        setState(() => _searchQuery = v.toLowerCase()),
+                  ),
+                ),
+              ),
+
+              // ── Dashboard cards row ──
+              SliverToBoxAdapter(child: _DashboardCards(products: allProducts)),
+
+              // ── Stock overview chart ──
+              if (categories.length > 1)
+                SliverToBoxAdapter(child: _StockChart(products: allProducts)),
+
               // ── Category filter chips ──
               if (categories.length > 1)
-                SizedBox(
-                  height: 48,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: const Text('All'),
-                          selected: _categoryFilter == null,
-                          onSelected: (_) =>
-                              setState(() => _categoryFilter = null),
-                        ),
-                      ),
-                      ...categories.map((cat) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(cat),
-                            selected: _categoryFilter == cat,
-                            onSelected: (_) => setState(
-                              () => _categoryFilter = _categoryFilter == cat
-                                  ? null
-                                  : cat,
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
+                SliverToBoxAdapter(
+                  child: _CategoryChips(
+                    categories: categories,
+                    selected: _categoryFilter,
+                    onSelected: (cat) => setState(() => _categoryFilter = cat),
                   ),
                 ),
 
-              // ── Summary bar ──
-              _SummaryBar(products: allProducts),
-
               // ── Product list ──
-              Expanded(
-                child: products.isEmpty
-                    ? const Center(child: Text('No matching products.'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 80),
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          return _ProductTile(
-                            product: products[index],
-                            onIncrement: () => _firestoreService
-                                .incrementQuantity(products[index].id),
-                            onDecrement: () => _firestoreService
-                                .decrementQuantity(products[index].id),
-                            onDelete: () => _confirmDelete(products[index]),
-                            onEdit: () => _showEditDialog(products[index]),
-                          );
-                        },
+              if (products.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(child: Text('No matching products.')),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _ProductCard(
+                        product: products[index],
+                        onIncrement: () => _firestoreService.incrementQuantity(
+                          products[index].id,
+                        ),
+                        onDecrement: () => _firestoreService.decrementQuantity(
+                          products[index].id,
+                        ),
+                        onDelete: () => _confirmDelete(products[index]),
+                        onEdit: () => _showEditDialog(products[index]),
                       ),
-              ),
+                      childCount: products.length,
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -190,7 +146,9 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: SugoColors.statusDanger,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -285,40 +243,40 @@ class _InventoryPageState extends State<InventoryPage> {
 // Private widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Compact summary bar showing total products and low-stock count.
-class _SummaryBar extends StatelessWidget {
-  final List<Product> products;
-  const _SummaryBar({required this.products});
-
+/// Empty state with earthy illustration.
+class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final lowStock = products.where((p) => p.quantity <= p.minThreshold).length;
-    final outOfStock = products.where((p) => p.quantity == 0).length;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withAlpha(80),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _StatChip(
-            label: 'Total',
-            value: '${products.length}',
-            color: Theme.of(context).colorScheme.primary,
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: SugoColors.mossPale,
+              borderRadius: SugoBorders.card,
+            ),
+            child: const Icon(
+              Icons.eco_outlined,
+              size: 48,
+              color: SugoColors.moss,
+            ),
           ),
-          _StatChip(
-            label: 'Low stock',
-            value: '$lowStock',
-            color: Colors.orange,
+          const SizedBox(height: 20),
+          Text(
+            'No products yet',
+            style: GoogleFonts.lora(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: SugoColors.bark,
+            ),
           ),
-          _StatChip(
-            label: 'Out of stock',
-            value: '$outOfStock',
-            color: Colors.red,
+          const SizedBox(height: 8),
+          Text(
+            'Scan a barcode to add your first item.',
+            style: GoogleFonts.lora(fontSize: 14, color: SugoColors.warmGrey),
           ),
         ],
       ),
@@ -326,49 +284,315 @@ class _SummaryBar extends StatelessWidget {
   }
 }
 
-/// Small stat indicator used in the summary bar.
-class _StatChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _StatChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+/// Search bar with earthy styling.
+class _SearchBar extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+  const _SearchBar({required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: SugoBorders.chip,
+        boxShadow: SugoShadows.soft,
+      ),
+      child: TextField(
+        onChanged: onChanged,
+        style: GoogleFonts.lora(fontSize: 14, color: SugoColors.bark),
+        decoration: InputDecoration(
+          hintText: 'Search products…',
+          prefixIcon: const Icon(Icons.search, color: SugoColors.warmGrey),
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
-        ),
-      ],
+      ),
     );
   }
 }
 
-/// A single product row with quantity controls.
-class _ProductTile extends StatelessWidget {
+/// Three dashboard stat cards with grain-textured backgrounds.
+class _DashboardCards extends StatelessWidget {
+  final List<Product> products;
+  const _DashboardCards({required this.products});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = products.length;
+    final lowStock = products
+        .where((p) => p.quantity > 0 && p.quantity <= p.minThreshold)
+        .length;
+    final outOfStock = products.where((p) => p.quantity == 0).length;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatCard(
+              label: 'Total',
+              value: '$total',
+              icon: Icons.inventory_2_outlined,
+              color: SugoColors.moss,
+              bgColor: SugoColors.mossPale,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _StatCard(
+              label: 'Low stock',
+              value: '$lowStock',
+              icon: Icons.warning_amber_rounded,
+              color: SugoColors.statusWarning,
+              bgColor: const Color(0xFFF5EDD0),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _StatCard(
+              label: 'Out of stock',
+              value: '$outOfStock',
+              icon: Icons.error_outline_rounded,
+              color: SugoColors.statusDanger,
+              bgColor: SugoColors.terracottaPale,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual stat card with organic shape and grain overlay.
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: SugoBorders.card,
+        boxShadow: SugoShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.lora(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.lora(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: SugoColors.warmGrey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Donut chart showing stock distribution by category.
+class _StockChart extends StatelessWidget {
+  final List<Product> products;
+  const _StockChart({required this.products});
+
+  @override
+  Widget build(BuildContext context) {
+    // Group quantities by category.
+    final Map<String, int> categoryQty = {};
+    for (final p in products) {
+      categoryQty[p.category] = (categoryQty[p.category] ?? 0) + p.quantity;
+    }
+    final entries = categoryQty.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: SugoBorders.card,
+        boxShadow: SugoShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Stock by Category',
+            style: GoogleFonts.lora(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: SugoColors.bark,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 160,
+            child: Row(
+              children: [
+                // Donut chart
+                Expanded(
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 3,
+                      centerSpaceRadius: 36,
+                      sections: entries.map((e) {
+                        final style = categoryStyleFor(e.key);
+                        return PieChartSectionData(
+                          value: e.value.toDouble(),
+                          color: style.color,
+                          radius: 32,
+                          title: '',
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Legend
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: entries.take(6).map((e) {
+                      final style = categoryStyleFor(e.key);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: style.color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                e.key,
+                                style: GoogleFonts.lora(
+                                  fontSize: 12,
+                                  color: SugoColors.bark,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '${e.value}',
+                              style: GoogleFonts.lora(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: SugoColors.warmGrey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Horizontal scrolling category filter chips with icons.
+class _CategoryChips extends StatelessWidget {
+  final List<String> categories;
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  const _CategoryChips({
+    required this.categories,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 52,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              avatar: const Icon(Icons.grid_view_rounded, size: 16),
+              label: const Text('All'),
+              selected: selected == null,
+              onSelected: (_) => onSelected(null),
+              selectedColor: SugoColors.mossPale,
+            ),
+          ),
+          ...categories.map((cat) {
+            final style = categoryStyleFor(cat);
+            final isSelected = selected == cat;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                avatar: Icon(
+                  style.icon,
+                  size: 16,
+                  color: isSelected ? style.color : SugoColors.warmGrey,
+                ),
+                label: Text(cat),
+                selected: isSelected,
+                onSelected: (_) => onSelected(isSelected ? null : cat),
+                selectedColor: style.color.withAlpha(35),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+/// Product card with organic shape, category colour accent, and controls.
+class _ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
 
-  const _ProductTile({
+  const _ProductCard({
     required this.product,
     required this.onIncrement,
     required this.onDecrement,
@@ -378,112 +602,135 @@ class _ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine highlight color based on stock level.
     final isOutOfStock = product.quantity == 0;
     final isLowStock =
         !isOutOfStock && product.quantity <= product.minThreshold;
-
-    final Color tileColor;
-    if (isOutOfStock) {
-      tileColor = Colors.red.shade50;
-    } else if (isLowStock) {
-      tileColor = Colors.orange.shade50;
-    } else {
-      tileColor = Colors.transparent;
-    }
-
+    final catStyle = categoryStyleFor(product.category);
     final dateFormat = DateFormat('MMM d, yyyy – HH:mm');
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      color: tileColor,
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: SugoBorders.card,
+        boxShadow: SugoShadows.soft,
+        border: Border(
+          left: BorderSide(
+            color: isOutOfStock
+                ? SugoColors.statusDanger
+                : isLowStock
+                ? SugoColors.statusWarning
+                : catStyle.color,
+            width: 4,
+          ),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            // ── Left: product info ──
+            // ── Category icon ──
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: catStyle.color.withAlpha(25),
+                borderRadius: SugoBorders.chip,
+              ),
+              child: Icon(catStyle.icon, color: catStyle.color, size: 22),
+            ),
+            const SizedBox(width: 12),
+
+            // ── Product info ──
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product name + badge
                   Row(
                     children: [
                       Flexible(
                         child: Text(
                           product.name,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: GoogleFonts.lora(
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
+                            color: SugoColors.bark,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (isOutOfStock) ...[
                         const SizedBox(width: 8),
-                        _Badge(label: 'OUT', color: Colors.red),
+                        _Badge(label: 'OUT', color: SugoColors.statusDanger),
                       ] else if (isLowStock) ...[
                         const SizedBox(width: 8),
-                        _Badge(label: 'LOW', color: Colors.orange),
+                        _Badge(label: 'LOW', color: SugoColors.statusWarning),
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     product.category,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    style: GoogleFonts.lora(
+                      fontSize: 12,
+                      color: catStyle.color,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Updated ${dateFormat.format(product.updatedAt)}',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                    style: GoogleFonts.lora(
+                      fontSize: 10,
+                      color: SugoColors.warmGrey,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // ── Right: quantity controls ──
+            // ── Quantity controls ──
             Column(
               children: [
-                // Quantity display
                 Text(
                   '${product.quantity}',
-                  style: TextStyle(
+                  style: GoogleFonts.lora(
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     color: isOutOfStock
-                        ? Colors.red
+                        ? SugoColors.statusDanger
                         : isLowStock
-                        ? Colors.orange
-                        : Theme.of(context).colorScheme.primary,
+                        ? SugoColors.statusWarning
+                        : SugoColors.moss,
                   ),
                 ),
                 const SizedBox(height: 4),
-
-                // +/- buttons
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _CircleBtn(
                       icon: Icons.remove,
                       onPressed: onDecrement,
-                      color: Colors.red.shade300,
+                      color: SugoColors.terracotta,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     _CircleBtn(
                       icon: Icons.add,
                       onPressed: onIncrement,
-                      color: Colors.green.shade400,
+                      color: SugoColors.moss,
                     ),
                   ],
                 ),
               ],
             ),
 
-            // ── Actions menu ──
+            // ── Actions ──
             PopupMenuButton<String>(
+              icon: const Icon(
+                Icons.more_vert,
+                color: SugoColors.warmGrey,
+                size: 20,
+              ),
               onSelected: (value) {
                 if (value == 'edit') onEdit();
                 if (value == 'delete') onDelete();
@@ -500,7 +747,7 @@ class _ProductTile extends StatelessWidget {
   }
 }
 
-/// Small colored badge (e.g. "OUT", "LOW").
+/// Status badge with organic shape.
 class _Badge extends StatelessWidget {
   final String label;
   final Color color;
@@ -509,24 +756,24 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(6),
+        color: color.withAlpha(30),
+        borderRadius: SugoBorders.chip,
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: GoogleFonts.lora(
+          color: color,
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 }
 
-/// Tiny circular icon button for +/- quantity controls.
+/// Circular icon button for quantity controls.
 class _CircleBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
@@ -546,7 +793,7 @@ class _CircleBtn extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: color.withAlpha(40),
+          color: color.withAlpha(30),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, size: 18, color: color),

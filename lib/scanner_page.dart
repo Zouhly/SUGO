@@ -1,4 +1,4 @@
-/// Scanner page – uses the phone camera to scan barcodes / QR codes.
+/// Scanner page – wabi-sabi earth-styled barcode scanner.
 ///
 /// After a successful scan the page checks Firestore:
 ///   • Product exists → increment quantity & log.
@@ -6,8 +6,10 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'firestore_service.dart';
+import 'theme.dart';
 
 /// Signature for a builder that returns the camera scanner widget.
 typedef ScannerWidgetBuilder =
@@ -47,7 +49,6 @@ class ScannerPageState extends State<ScannerPage> {
 
   // ── Scan handler ──────────────────────────────────────────────────
   Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
-    // Ignore if we are already processing a scan.
     if (_isProcessing) return;
 
     final barcode = capture.barcodes.firstOrNull?.rawValue;
@@ -59,13 +60,11 @@ class ScannerPageState extends State<ScannerPage> {
     });
 
     try {
-      // Check if the product already exists.
       final existing = await _firestoreService.getProductByBarcode(barcode);
 
       if (!mounted) return;
 
       if (existing != null) {
-        // ── Existing product → increment quantity ──
         await _firestoreService.incrementQuantity(existing.id);
         await _firestoreService.logScan(
           barcode: barcode,
@@ -78,22 +77,23 @@ class ScannerPageState extends State<ScannerPage> {
               content: Text(
                 '${existing.name} — quantity +1 (now ${existing.quantity + 1})',
               ),
-              backgroundColor: Colors.green.shade700,
+              backgroundColor: SugoColors.moss,
             ),
           );
         }
       } else {
-        // ── New product → show creation form ──
         await _showNewProductForm(barcode);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: SugoColors.statusDanger,
+          ),
         );
       }
     } finally {
-      // Small cooldown so the same code isn't scanned instantly again.
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -113,14 +113,13 @@ class ScannerPageState extends State<ScannerPage> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Padding(
-          // Push the sheet above the keyboard.
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: Container(
             decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              color: SugoColors.parchment,
+              borderRadius: SugoBorders.sheet,
             ),
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             child: Form(
@@ -135,22 +134,25 @@ class ScannerPageState extends State<ScannerPage> {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: SugoColors.sandDark,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     Text(
                       'New Product',
-                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: GoogleFonts.lora(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: SugoColors.bark,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Barcode: $barcode',
-                      style: Theme.of(
-                        ctx,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                      style: GoogleFonts.lora(
+                        fontSize: 13,
+                        color: SugoColors.warmGrey,
+                      ),
                     ),
                     const SizedBox(height: 20),
 
@@ -159,8 +161,7 @@ class ScannerPageState extends State<ScannerPage> {
                       controller: nameCtrl,
                       decoration: const InputDecoration(
                         labelText: 'Product name',
-                        prefixIcon: Icon(Icons.fastfood_outlined),
-                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.eco_outlined),
                       ),
                       textCapitalization: TextCapitalization.sentences,
                       validator: (v) =>
@@ -174,7 +175,6 @@ class ScannerPageState extends State<ScannerPage> {
                       decoration: const InputDecoration(
                         labelText: 'Category',
                         prefixIcon: Icon(Icons.category_outlined),
-                        border: OutlineInputBorder(),
                       ),
                       textCapitalization: TextCapitalization.sentences,
                       validator: (v) =>
@@ -191,7 +191,6 @@ class ScannerPageState extends State<ScannerPage> {
                             decoration: const InputDecoration(
                               labelText: 'Quantity',
                               prefixIcon: Icon(Icons.numbers),
-                              border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
                           ),
@@ -203,7 +202,6 @@ class ScannerPageState extends State<ScannerPage> {
                             decoration: const InputDecoration(
                               labelText: 'Min threshold',
                               prefixIcon: Icon(Icons.warning_amber),
-                              border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
                           ),
@@ -235,7 +233,6 @@ class ScannerPageState extends State<ScannerPage> {
       },
     );
 
-    // If the user confirmed, save to Firestore.
     if (result == true) {
       final product = await _firestoreService.addProduct(
         barcode: barcode,
@@ -253,7 +250,7 @@ class ScannerPageState extends State<ScannerPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${product.name} added to inventory!'),
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: SugoColors.moss,
           ),
         );
       }
@@ -264,7 +261,16 @@ class ScannerPageState extends State<ScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Product')),
+      appBar: AppBar(
+        title: Text(
+          'Scan Product',
+          style: GoogleFonts.lora(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: SugoColors.bark,
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           // ── Camera preview ──
@@ -275,28 +281,32 @@ class ScannerPageState extends State<ScannerPage> {
                   onDetect: _onBarcodeDetected,
                 ),
 
-          // ── Overlay with scan frame ──
+          // ── Organic scan frame overlay ──
           Center(
             child: Container(
               width: 260,
               height: 260,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: _isProcessing ? Colors.orange : Colors.white,
+                  color: _isProcessing
+                      ? SugoColors.terracotta
+                      : SugoColors.sand.withAlpha(200),
                   width: 3,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: SugoBorders.card,
               ),
             ),
           ),
 
           // ── Processing indicator ──
           if (_isProcessing)
-            const Positioned(
+            Positioned(
               bottom: 120,
               left: 0,
               right: 0,
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: CircularProgressIndicator(color: SugoColors.terracotta),
+              ),
             ),
 
           // ── Last scanned barcode label ──
@@ -311,13 +321,17 @@ class ScannerPageState extends State<ScannerPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(12),
+                  color: SugoColors.bark.withAlpha(180),
+                  borderRadius: SugoBorders.chip,
                 ),
                 child: Text(
                   'Last scan: $_lastScanned',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: GoogleFonts.lora(
+                    color: SugoColors.sand,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
