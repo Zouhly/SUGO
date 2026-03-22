@@ -9,14 +9,24 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'firestore_service.dart';
 
+/// Signature for a builder that returns the camera scanner widget.
+typedef ScannerWidgetBuilder =
+    Widget Function(
+      MobileScannerController controller,
+      void Function(BarcodeCapture) onDetect,
+    );
+
 class ScannerPage extends StatefulWidget {
-  const ScannerPage({super.key});
+  /// Optional builder to override the scanner widget (used in tests).
+  final ScannerWidgetBuilder? scannerBuilder;
+
+  const ScannerPage({super.key, this.scannerBuilder});
 
   @override
-  State<ScannerPage> createState() => _ScannerPageState();
+  State<ScannerPage> createState() => ScannerPageState();
 }
 
-class _ScannerPageState extends State<ScannerPage> {
+class ScannerPageState extends State<ScannerPage> {
   /// Controller for the camera scanner.
   final MobileScannerController _scannerController = MobileScannerController();
 
@@ -258,10 +268,12 @@ class _ScannerPageState extends State<ScannerPage> {
       body: Stack(
         children: [
           // ── Camera preview ──
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onBarcodeDetected,
-          ),
+          widget.scannerBuilder != null
+              ? widget.scannerBuilder!(_scannerController, _onBarcodeDetected)
+              : MobileScanner(
+                  controller: _scannerController,
+                  onDetect: _onBarcodeDetected,
+                ),
 
           // ── Overlay with scan frame ──
           Center(
