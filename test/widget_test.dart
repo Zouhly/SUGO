@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:food_inventory/firestore_service.dart';
+import 'package:food_inventory/inventory_page.dart';
 import 'package:food_inventory/main.dart';
+import 'package:food_inventory/scanner_page.dart';
 
 void main() {
   setUp(() {
@@ -86,11 +88,15 @@ void main() {
       expect(find.text('No products yet'), findsOneWidget);
     });
 
-    testWidgets('uses IndexedStack to preserve state', (tester) async {
+    testWidgets('disposes scanner page when switching to inventory', (
+      tester,
+    ) async {
       await tester.pumpWidget(const FoodInventoryApp());
       await tester.pumpAndSettle();
 
-      expect(find.byType(IndexedStack), findsOneWidget);
+      // On the Inventory tab, ScannerPage should not be in the tree
+      expect(find.byType(InventoryPage), findsOneWidget);
+      expect(find.byType(ScannerPage), findsNothing);
     });
   });
 }
