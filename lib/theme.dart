@@ -1,40 +1,38 @@
-/// SUGO wabi-sabi theme – earth-inspired palette with organic warmth.
+/// SUGO – clean, minimal theme for mobile readability.
 ///
-/// Moss greens, terracotta, sand tones. Serif fonts, soft shadows,
-/// asymmetric rounded corners, grain textures, and natural imperfection.
+/// Neutral palette with a single moss-green accent.
+/// System sans-serif font, generous touch targets, simple rounded corners.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-// ─── Earth palette ───────────────────────────────────────────────────────────
+// ─── Palette ─────────────────────────────────────────────────────────────────
 
 class SugoColors {
   SugoColors._();
 
-  // Primary – moss green
+  // Primary accent
   static const Color moss = Color(0xFF5B7553);
-  static const Color mossLight = Color(0xFF8FA787);
-  static const Color mossPale = Color(0xFFD6E4D0);
+  static const Color mossLight = Color(0xFFD6E4D0);
+  static const Color mossPale = Color(0xFFECF2E9);
 
-  // Accent – terracotta
+  // Accent – used sparingly (FAB, warnings)
   static const Color terracotta = Color(0xFFBF7B5E);
   static const Color terracottaLight = Color(0xFFD9A68C);
-  static const Color terracottaPale = Color(0xFFF2DDD3);
+  static const Color terracottaPale = Color(0xFFFAF0EB);
 
-  // Neutral – sand
-  static const Color sand = Color(0xFFF5EFE6);
-  static const Color sandDark = Color(0xFFE8DFD0);
-  static const Color parchment = Color(0xFFFAF7F2);
+  // Neutrals
+  static const Color sand = Color(0xFFF7F5F2);
+  static const Color sandDark = Color(0xFFE8E4DE);
+  static const Color parchment = Color(0xFFFAFAF8);
   static const Color warmGrey = Color(0xFF8C8278);
-  static const Color bark = Color(0xFF4A3F35);
+  static const Color bark = Color(0xFF2C2520);
 
-  // Status colours (muted, earthy)
+  // Status – muted
   static const Color statusOk = Color(0xFF6B8F5E);
   static const Color statusWarning = Color(0xFFCB9B3E);
   static const Color statusDanger = Color(0xFFC26E5A);
 
-  // Surface overlay for grain texture effect
   static const Color grain = Color(0x08000000);
 }
 
@@ -46,8 +44,6 @@ class CategoryStyle {
   const CategoryStyle(this.icon, this.color);
 }
 
-/// Maps known category names to icons and colours.
-/// Unknown categories get a fallback style.
 CategoryStyle categoryStyleFor(String category) {
   final key = category.toLowerCase().trim();
   return _categoryMap[key] ??
@@ -84,40 +80,18 @@ const _categoryMap = <String, CategoryStyle>{
   'other': CategoryStyle(Icons.label_outline, Color(0xFF8C8278)),
 };
 
-// ─── Asymmetric border radii (wabi-sabi) ─────────────────────────────────────
+// ─── Border radii ────────────────────────────────────────────────────────────
 
 class SugoBorders {
   SugoBorders._();
 
-  /// Organic card shape – asymmetric corners
-  static const BorderRadius card = BorderRadius.only(
-    topLeft: Radius.circular(20),
-    topRight: Radius.circular(12),
-    bottomLeft: Radius.circular(14),
-    bottomRight: Radius.circular(22),
-  );
-
-  /// Bottom sheet top corners
+  static const BorderRadius card = BorderRadius.all(Radius.circular(14));
   static const BorderRadius sheet = BorderRadius.only(
-    topLeft: Radius.circular(28),
-    topRight: Radius.circular(18),
+    topLeft: Radius.circular(20),
+    topRight: Radius.circular(20),
   );
-
-  /// Chip / badge shape
-  static const BorderRadius chip = BorderRadius.only(
-    topLeft: Radius.circular(14),
-    topRight: Radius.circular(10),
-    bottomLeft: Radius.circular(10),
-    bottomRight: Radius.circular(14),
-  );
-
-  /// Button shape
-  static const BorderRadius button = BorderRadius.only(
-    topLeft: Radius.circular(16),
-    topRight: Radius.circular(10),
-    bottomLeft: Radius.circular(12),
-    bottomRight: Radius.circular(16),
-  );
+  static const BorderRadius chip = BorderRadius.all(Radius.circular(10));
+  static const BorderRadius button = BorderRadius.all(Radius.circular(12));
 }
 
 // ─── Shadows ─────────────────────────────────────────────────────────────────
@@ -127,17 +101,17 @@ class SugoShadows {
 
   static List<BoxShadow> soft = [
     BoxShadow(
-      color: SugoColors.bark.withAlpha(18),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
+      color: Colors.black.withAlpha(10),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
     ),
   ];
 
   static List<BoxShadow> medium = [
     BoxShadow(
-      color: SugoColors.bark.withAlpha(30),
-      blurRadius: 20,
-      offset: const Offset(0, 6),
+      color: Colors.black.withAlpha(18),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
     ),
   ];
 }
@@ -145,80 +119,79 @@ class SugoShadows {
 // ─── Theme data ──────────────────────────────────────────────────────────────
 
 ThemeData sugoTheme() {
-  final textTheme = GoogleFonts.loraTextTheme().copyWith(
-    // Display/headline – heavier serif
-    displayLarge: GoogleFonts.lora(
-      fontSize: 32,
+  const textColor = SugoColors.bark;
+  const subtleColor = SugoColors.warmGrey;
+
+  final textTheme = TextTheme(
+    displayLarge: TextStyle(
+      fontSize: 34,
       fontWeight: FontWeight.w700,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    displayMedium: GoogleFonts.lora(
+    displayMedium: TextStyle(
       fontSize: 28,
       fontWeight: FontWeight.w600,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    headlineLarge: GoogleFonts.lora(
+    headlineLarge: TextStyle(
       fontSize: 24,
       fontWeight: FontWeight.w700,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    headlineMedium: GoogleFonts.lora(
+    headlineMedium: TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w600,
+      color: textColor,
+    ),
+    headlineSmall: TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.w600,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    headlineSmall: GoogleFonts.lora(
-      fontSize: 18,
+    titleLarge: TextStyle(
+      fontSize: 20,
       fontWeight: FontWeight.w600,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    // Title
-    titleLarge: GoogleFonts.lora(
-      fontSize: 18,
-      fontWeight: FontWeight.w700,
-      color: SugoColors.bark,
-    ),
-    titleMedium: GoogleFonts.lora(
-      fontSize: 16,
+    titleMedium: TextStyle(
+      fontSize: 17,
       fontWeight: FontWeight.w600,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    titleSmall: GoogleFonts.lora(
-      fontSize: 14,
+    titleSmall: TextStyle(
+      fontSize: 15,
       fontWeight: FontWeight.w600,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    // Body – lighter serif for readability
-    bodyLarge: GoogleFonts.lora(
-      fontSize: 16,
+    bodyLarge: TextStyle(
+      fontSize: 17,
       fontWeight: FontWeight.w400,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    bodyMedium: GoogleFonts.lora(
-      fontSize: 14,
+    bodyMedium: TextStyle(
+      fontSize: 15,
       fontWeight: FontWeight.w400,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    bodySmall: GoogleFonts.lora(
-      fontSize: 12,
+    bodySmall: TextStyle(
+      fontSize: 13,
       fontWeight: FontWeight.w400,
-      color: SugoColors.warmGrey,
+      color: subtleColor,
     ),
-    // Label
-    labelLarge: GoogleFonts.lora(
-      fontSize: 14,
+    labelLarge: TextStyle(
+      fontSize: 15,
       fontWeight: FontWeight.w600,
-      color: SugoColors.bark,
+      color: textColor,
     ),
-    labelMedium: GoogleFonts.lora(
+    labelMedium: TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+      color: subtleColor,
+    ),
+    labelSmall: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w500,
-      color: SugoColors.warmGrey,
-    ),
-    labelSmall: GoogleFonts.lora(
-      fontSize: 11,
-      fontWeight: FontWeight.w500,
-      color: SugoColors.warmGrey,
+      color: subtleColor,
     ),
   );
 
@@ -245,13 +218,13 @@ ThemeData sugoTheme() {
       outline: SugoColors.warmGrey,
     ),
 
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: SugoColors.parchment,
       foregroundColor: SugoColors.bark,
       elevation: 0,
-      centerTitle: true,
-      titleTextStyle: GoogleFonts.lora(
-        fontSize: 20,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontSize: 22,
         fontWeight: FontWeight.w700,
         color: SugoColors.bark,
       ),
@@ -267,10 +240,10 @@ ThemeData sugoTheme() {
     chipTheme: ChipThemeData(
       backgroundColor: SugoColors.sand,
       selectedColor: SugoColors.mossPale,
-      labelStyle: GoogleFonts.lora(fontSize: 13, fontWeight: FontWeight.w500),
+      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       shape: RoundedRectangleBorder(borderRadius: SugoBorders.chip),
       side: BorderSide.none,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
     ),
 
     filledButtonTheme: FilledButtonThemeData(
@@ -278,15 +251,15 @@ ThemeData sugoTheme() {
         backgroundColor: SugoColors.moss,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: SugoBorders.button),
-        textStyle: GoogleFonts.lora(fontSize: 15, fontWeight: FontWeight.w600),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: SugoColors.moss,
-        textStyle: GoogleFonts.lora(fontSize: 14, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
 
@@ -305,21 +278,21 @@ ThemeData sugoTheme() {
         borderRadius: SugoBorders.chip,
         borderSide: const BorderSide(color: SugoColors.moss, width: 1.5),
       ),
-      labelStyle: GoogleFonts.lora(color: SugoColors.warmGrey),
-      hintStyle: GoogleFonts.lora(color: SugoColors.warmGrey),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      labelStyle: const TextStyle(color: SugoColors.warmGrey, fontSize: 15),
+      hintStyle: const TextStyle(color: SugoColors.warmGrey, fontSize: 15),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
 
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: SugoColors.terracotta,
+      backgroundColor: SugoColors.moss,
       foregroundColor: Colors.white,
-      elevation: 4,
+      elevation: 2,
       shape: CircleBorder(),
     ),
 
     snackBarTheme: SnackBarThemeData(
       backgroundColor: SugoColors.bark,
-      contentTextStyle: GoogleFonts.lora(color: Colors.white, fontSize: 14),
+      contentTextStyle: const TextStyle(color: Colors.white, fontSize: 15),
       shape: RoundedRectangleBorder(borderRadius: SugoBorders.chip),
       behavior: SnackBarBehavior.floating,
     ),
@@ -327,7 +300,7 @@ ThemeData sugoTheme() {
     dialogTheme: DialogThemeData(
       backgroundColor: SugoColors.parchment,
       shape: RoundedRectangleBorder(borderRadius: SugoBorders.card),
-      titleTextStyle: GoogleFonts.lora(
+      titleTextStyle: const TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w700,
         color: SugoColors.bark,

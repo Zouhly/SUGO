@@ -1,4 +1,4 @@
-/// Scanner page – wabi-sabi earth-styled barcode scanner.
+/// Scanner page – barcode scanner with new-product form.
 ///
 /// After a successful scan the page checks Firestore:
 ///   • Product exists → increment quantity & log.
@@ -6,7 +6,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'firestore_service.dart';
 import 'theme.dart';
@@ -140,8 +139,8 @@ class ScannerPageState extends State<ScannerPage> {
                     ),
                     Text(
                       'New Product',
-                      style: GoogleFonts.lora(
-                        fontSize: 20,
+                      style: TextStyle(
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: SugoColors.bark,
                       ),
@@ -149,8 +148,8 @@ class ScannerPageState extends State<ScannerPage> {
                     const SizedBox(height: 4),
                     Text(
                       'Barcode: $barcode',
-                      style: GoogleFonts.lora(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: 14,
                         color: SugoColors.warmGrey,
                       ),
                     ),
@@ -261,16 +260,7 @@ class ScannerPageState extends State<ScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Scan Product',
-          style: GoogleFonts.lora(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: SugoColors.bark,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('Scan Product')),
       body: Stack(
         children: [
           // ── Camera preview ──
@@ -327,9 +317,9 @@ class ScannerPageState extends State<ScannerPage> {
                 child: Text(
                   'Last scan: $_lastScanned',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.lora(
+                  style: const TextStyle(
                     color: SugoColors.sand,
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

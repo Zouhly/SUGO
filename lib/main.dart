@@ -1,7 +1,7 @@
 /// SUGO – Scan & Update, Groceries Organizer.
 ///
-/// Initialises Firebase, applies the wabi-sabi earth theme, and provides
-/// a custom navigation shell with a floating action button for scanning.
+/// Initialises Firebase, applies the app theme, and provides
+/// a navigation shell with a floating action button for scanning.
 library;
 
 import 'package:flutter/material.dart';
@@ -53,13 +53,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  /// The main pages.
-  final _pages = const <Widget>[InventoryPage(), ScannerPage()];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      // Avoid IndexedStack so the ScannerPage (and its camera) is disposed
+      // when not visible, preventing continuous CPU usage.
+      body: _currentIndex == 0 ? const InventoryPage() : const ScannerPage(),
 
       // ── Floating scan button ──
       floatingActionButton: FloatingActionButton(
@@ -129,12 +128,12 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isSelected ? selectedIcon : icon, color: color, size: 22),
-            const SizedBox(height: 1),
+            Icon(isSelected ? selectedIcon : icon, color: color, size: 24),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: color,
               ),

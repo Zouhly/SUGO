@@ -1,12 +1,11 @@
-/// Inventory dashboard – wabi-sabi earth-inspired design.
+/// Inventory dashboard – clean, minimal design.
 ///
-/// Features a stock-overview chart, category-coloured product cards with
-/// organic shapes, search, and quick quantity controls.
+/// Stock summary, category filters, search, and product list
+/// with generous touch targets and readable text.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'firestore_service.dart';
 import 'models.dart';
@@ -41,16 +40,7 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'SUGO',
-          style: GoogleFonts.lora(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: SugoColors.bark,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: const Text('SUGO')),
       body: StreamBuilder<List<Product>>(
         stream: _firestoreService.streamProducts(),
         builder: (context, snapshot) {
@@ -247,7 +237,7 @@ class _InventoryPageState extends State<InventoryPage> {
 // Private widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Empty state with earthy illustration.
+/// Empty state.
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -257,32 +247,18 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: SugoColors.mossPale,
-              borderRadius: SugoBorders.card,
-            ),
-            child: const Icon(
-              Icons.eco_outlined,
-              size: 48,
-              color: SugoColors.moss,
-            ),
-          ),
-          const SizedBox(height: 20),
+          Icon(Icons.eco_outlined, size: 56, color: SugoColors.warmGrey),
+          const SizedBox(height: 16),
           Text(
             'No products yet',
-            style: GoogleFonts.lora(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: SugoColors.bark,
-            ),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
             'Scan a barcode to add your first item.',
-            style: GoogleFonts.lora(fontSize: 14, color: SugoColors.warmGrey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: SugoColors.warmGrey),
           ),
         ],
       ),
@@ -290,7 +266,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Search bar with earthy styling.
+/// Search bar.
 class _SearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
   const _SearchBar({required this.onChanged});
@@ -305,7 +281,7 @@ class _SearchBar extends StatelessWidget {
       ),
       child: TextField(
         onChanged: onChanged,
-        style: GoogleFonts.lora(fontSize: 14, color: SugoColors.bark),
+        style: Theme.of(context).textTheme.bodyMedium,
         decoration: InputDecoration(
           hintText: 'Search products…',
           prefixIcon: const Icon(Icons.search, color: SugoColors.warmGrey),
@@ -313,14 +289,14 @@ class _SearchBar extends StatelessWidget {
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
   }
 }
 
-/// Three dashboard stat cards with grain-textured backgrounds.
+/// Three dashboard stat cards.
 class _DashboardCards extends StatelessWidget {
   final List<Product> products;
   const _DashboardCards({required this.products});
@@ -341,9 +317,7 @@ class _DashboardCards extends StatelessWidget {
             child: _StatCard(
               label: 'Total',
               value: '$total',
-              icon: Icons.inventory_2_outlined,
-              color: SugoColors.moss,
-              bgColor: SugoColors.mossPale,
+              color: SugoColors.bark,
             ),
           ),
           const SizedBox(width: 10),
@@ -351,9 +325,7 @@ class _DashboardCards extends StatelessWidget {
             child: _StatCard(
               label: 'Low stock',
               value: '$lowStock',
-              icon: Icons.warning_amber_rounded,
               color: SugoColors.statusWarning,
-              bgColor: const Color(0xFFF5EDD0),
             ),
           ),
           const SizedBox(width: 10),
@@ -361,9 +333,7 @@ class _DashboardCards extends StatelessWidget {
             child: _StatCard(
               label: 'Out of stock',
               value: '$outOfStock',
-              icon: Icons.error_outline_rounded,
               color: SugoColors.statusDanger,
-              bgColor: SugoColors.terracottaPale,
             ),
           ),
         ],
@@ -372,67 +342,53 @@ class _DashboardCards extends StatelessWidget {
   }
 }
 
-/// Individual stat card with organic shape and grain overlay.
+/// Individual stat card.
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
   final Color color;
-  final Color bgColor;
 
   const _StatCard({
     required this.label,
     required this.value,
-    required this.icon,
     required this.color,
-    required this.bgColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: Colors.white,
         borderRadius: SugoBorders.card,
         boxShadow: SugoShadows.soft,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.lora(
-              fontSize: 26,
+            style: TextStyle(
+              fontSize: 28,
               fontWeight: FontWeight.w700,
               color: color,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.lora(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: SugoColors.warmGrey,
-            ),
-          ),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
   }
 }
 
-/// Donut chart showing stock distribution by category.
+/// Donut chart showing stock by category.
 class _StockChart extends StatelessWidget {
   final List<Product> products;
   const _StockChart({required this.products});
 
   @override
   Widget build(BuildContext context) {
-    // Group quantities by category.
     final Map<String, int> categoryQty = {};
     for (final p in products) {
       categoryQty[p.category] = (categoryQty[p.category] ?? 0) + p.quantity;
@@ -453,18 +409,13 @@ class _StockChart extends StatelessWidget {
         children: [
           Text(
             'Stock by Category',
-            style: GoogleFonts.lora(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: SugoColors.bark,
-            ),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 160,
+            height: 170,
             child: Row(
               children: [
-                // Donut chart
                 Expanded(
                   child: PieChart(
                     PieChartData(
@@ -483,7 +434,6 @@ class _StockChart extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Legend
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -491,7 +441,7 @@ class _StockChart extends StatelessWidget {
                     children: entries.take(6).map((e) {
                       final style = categoryStyleFor(e.key);
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
                             Container(
@@ -506,20 +456,14 @@ class _StockChart extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 e.key,
-                                style: GoogleFonts.lora(
-                                  fontSize: 12,
-                                  color: SugoColors.bark,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Text(
                               '${e.value}',
-                              style: GoogleFonts.lora(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: SugoColors.warmGrey,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -536,7 +480,7 @@ class _StockChart extends StatelessWidget {
   }
 }
 
-/// Horizontal scrolling category filter chips with icons.
+/// Horizontal scrolling category filter chips.
 class _CategoryChips extends StatelessWidget {
   final List<String> categories;
   final String? selected;
@@ -551,7 +495,7 @@ class _CategoryChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
+      height: 56,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -559,28 +503,19 @@ class _CategoryChips extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              avatar: const Icon(Icons.grid_view_rounded, size: 16),
               label: const Text('All'),
               selected: selected == null,
               onSelected: (_) => onSelected(null),
-              selectedColor: SugoColors.mossPale,
             ),
           ),
           ...categories.map((cat) {
-            final style = categoryStyleFor(cat);
             final isSelected = selected == cat;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
-                avatar: Icon(
-                  style.icon,
-                  size: 16,
-                  color: isSelected ? style.color : SugoColors.warmGrey,
-                ),
                 label: Text(cat),
                 selected: isSelected,
                 onSelected: (_) => onSelected(isSelected ? null : cat),
-                selectedColor: style.color.withAlpha(35),
               ),
             );
           }),
@@ -590,7 +525,7 @@ class _CategoryChips extends StatelessWidget {
   }
 }
 
-/// Product card with organic shape, category colour accent, and controls.
+/// Product card with clean layout and large touch targets.
 class _ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onIncrement;
@@ -611,42 +546,19 @@ class _ProductCard extends StatelessWidget {
     final isOutOfStock = product.quantity == 0;
     final isLowStock =
         !isOutOfStock && product.quantity <= product.minThreshold;
-    final catStyle = categoryStyleFor(product.category);
-    final dateFormat = DateFormat('MMM d, yyyy – HH:mm');
+    final dateFormat = DateFormat('MMM d, yyyy');
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: SugoBorders.card,
         boxShadow: SugoShadows.soft,
-        border: Border(
-          left: BorderSide(
-            color: isOutOfStock
-                ? SugoColors.statusDanger
-                : isLowStock
-                ? SugoColors.statusWarning
-                : catStyle.color,
-            width: 4,
-          ),
-        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // ── Category icon ──
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: catStyle.color.withAlpha(25),
-                borderRadius: SugoBorders.chip,
-              ),
-              child: Icon(catStyle.icon, color: catStyle.color, size: 22),
-            ),
-            const SizedBox(width: 12),
-
             // ── Product info ──
             Expanded(
               child: Column(
@@ -657,8 +569,8 @@ class _ProductCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           product.name,
-                          style: GoogleFonts.lora(
-                            fontSize: 15,
+                          style: const TextStyle(
+                            fontSize: 17,
                             fontWeight: FontWeight.w600,
                             color: SugoColors.bark,
                           ),
@@ -674,22 +586,15 @@ class _ProductCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     product.category,
-                    style: GoogleFonts.lora(
-                      fontSize: 12,
-                      color: catStyle.color,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 14, color: SugoColors.warmGrey),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Updated ${dateFormat.format(product.updatedAt)}',
-                    style: GoogleFonts.lora(
-                      fontSize: 10,
-                      color: SugoColors.warmGrey,
-                    ),
+                    dateFormat.format(product.updatedAt),
+                    style: TextStyle(fontSize: 13, color: SugoColors.warmGrey),
                   ),
                 ],
               ),
@@ -700,31 +605,23 @@ class _ProductCard extends StatelessWidget {
               children: [
                 Text(
                   '${product.quantity}',
-                  style: GoogleFonts.lora(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: isOutOfStock
                         ? SugoColors.statusDanger
                         : isLowStock
                         ? SugoColors.statusWarning
-                        : SugoColors.moss,
+                        : SugoColors.bark,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _CircleBtn(
-                      icon: Icons.remove,
-                      onPressed: onDecrement,
-                      color: SugoColors.terracotta,
-                    ),
-                    const SizedBox(width: 6),
-                    _CircleBtn(
-                      icon: Icons.add,
-                      onPressed: onIncrement,
-                      color: SugoColors.moss,
-                    ),
+                    _CircleBtn(icon: Icons.remove, onPressed: onDecrement),
+                    const SizedBox(width: 8),
+                    _CircleBtn(icon: Icons.add, onPressed: onIncrement),
                   ],
                 ),
               ],
@@ -735,7 +632,7 @@ class _ProductCard extends StatelessWidget {
               icon: const Icon(
                 Icons.more_vert,
                 color: SugoColors.warmGrey,
-                size: 20,
+                size: 22,
               ),
               onSelected: (value) {
                 if (value == 'edit') onEdit();
@@ -753,7 +650,7 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-/// Status badge with organic shape.
+/// Status badge.
 class _Badge extends StatelessWidget {
   final String label;
   final Color color;
@@ -762,16 +659,16 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
+        color: color.withAlpha(25),
         borderRadius: SugoBorders.chip,
       ),
       child: Text(
         label,
-        style: GoogleFonts.lora(
+        style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -783,26 +680,21 @@ class _Badge extends StatelessWidget {
 class _CircleBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  final Color color;
-  const _CircleBtn({
-    required this.icon,
-    required this.onPressed,
-    required this.color,
-  });
+  const _CircleBtn({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
-        width: 32,
-        height: 32,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: color.withAlpha(30),
+          color: SugoColors.sand,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: color),
+        child: Icon(icon, size: 20, color: SugoColors.bark),
       ),
     );
   }
