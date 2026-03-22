@@ -22,18 +22,13 @@ Widget fakeScannerBuilder(
 Widget buildTestApp(Widget child) {
   return MaterialApp(
     home: child,
-    theme: ThemeData(
-      colorSchemeSeed: Colors.teal,
-      useMaterial3: true,
-    ),
+    theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
   );
 }
 
 /// Helper to create a BarcodeCapture with a given raw value.
 BarcodeCapture makeBarcodeCapture(String rawValue) {
-  return BarcodeCapture(
-    barcodes: [Barcode(rawValue: rawValue)],
-  );
+  return BarcodeCapture(barcodes: [Barcode(rawValue: rawValue)]);
 }
 
 void main() {
@@ -65,43 +60,45 @@ void main() {
       expect(find.byKey(const Key('fake_scanner')), findsOneWidget);
     });
 
-    testWidgets('scanning existing product increments quantity and shows snackbar',
-        (tester) async {
-      // Seed an existing product
-      await fakeFirestore.collection('products').doc('p1').set({
-        'barcode': 'EXIST123',
-        'name': 'Milk',
-        'category': 'Dairy',
-        'quantity': 5,
-        'minThreshold': 2,
-        'createdAt': Timestamp.now(),
-        'updatedAt': Timestamp.now(),
-      });
+    testWidgets(
+      'scanning existing product increments quantity and shows snackbar',
+      (tester) async {
+        // Seed an existing product
+        await fakeFirestore.collection('products').doc('p1').set({
+          'barcode': 'EXIST123',
+          'name': 'Milk',
+          'category': 'Dairy',
+          'quantity': 5,
+          'minThreshold': 2,
+          'createdAt': Timestamp.now(),
+          'updatedAt': Timestamp.now(),
+        });
 
-      await tester.pumpWidget(
-        buildTestApp(const ScannerPage(scannerBuilder: fakeScannerBuilder)),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestApp(const ScannerPage(scannerBuilder: fakeScannerBuilder)),
+        );
+        await tester.pumpAndSettle();
 
-      // Trigger a scan
-      _lastOnDetect(makeBarcodeCapture('EXIST123'));
-      await tester.pump();
-      await tester.pump();
-      // Advance past the 2-second cooldown
-      await tester.pump(const Duration(seconds: 3));
+        // Trigger a scan
+        _lastOnDetect(makeBarcodeCapture('EXIST123'));
+        await tester.pump();
+        await tester.pump();
+        // Advance past the 2-second cooldown
+        await tester.pump(const Duration(seconds: 3));
 
-      // Snackbar should show increment message
-      expect(find.textContaining('Milk'), findsOneWidget);
+        // Snackbar should show increment message
+        expect(find.textContaining('Milk'), findsOneWidget);
 
-      // Quantity should be incremented in Firestore
-      final doc = await fakeFirestore.collection('products').doc('p1').get();
-      expect(doc.data()!['quantity'], 6);
+        // Quantity should be incremented in Firestore
+        final doc = await fakeFirestore.collection('products').doc('p1').get();
+        expect(doc.data()!['quantity'], 6);
 
-      // Scan log should be created
-      final logs = await fakeFirestore.collection('scanLogs').get();
-      expect(logs.docs.length, 1);
-      expect(logs.docs.first.data()['action'], 'incremented');
-    });
+        // Scan log should be created
+        final logs = await fakeFirestore.collection('scanLogs').get();
+        expect(logs.docs.length, 1);
+        expect(logs.docs.first.data()['action'], 'incremented');
+      },
+    );
 
     testWidgets('shows last scanned barcode label', (tester) async {
       await fakeFirestore.collection('products').doc('p1').set({
@@ -306,8 +303,9 @@ void main() {
       expect(snapshot.docs, isEmpty);
     });
 
-    testWidgets('scan overlay frame changes color when processing',
-        (tester) async {
+    testWidgets('scan overlay frame changes color when processing', (
+      tester,
+    ) async {
       await fakeFirestore.collection('products').doc('p1').set({
         'barcode': 'COLOR1',
         'name': 'Test',
