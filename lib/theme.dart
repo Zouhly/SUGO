@@ -295,11 +295,11 @@ ThemeData sugoTheme() {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: SugoBorders.chip,
-        borderSide: BorderSide(color: SugoColors.sandDark),
+        borderSide: const BorderSide(color: SugoColors.sandDark),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: SugoBorders.chip,
-        borderSide: BorderSide(color: SugoColors.sandDark),
+        borderSide: const BorderSide(color: SugoColors.sandDark),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: SugoBorders.chip,

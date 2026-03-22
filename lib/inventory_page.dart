@@ -25,6 +25,19 @@ class _InventoryPageState extends State<InventoryPage> {
   String _searchQuery = '';
   String? _categoryFilter;
 
+  List<Product> _filterProducts(List<Product> allProducts) {
+    return allProducts.where((p) {
+      final matchesSearch =
+          _searchQuery.isEmpty ||
+          p.name.toLowerCase().contains(_searchQuery) ||
+          p.barcode.toLowerCase().contains(_searchQuery) ||
+          p.category.toLowerCase().contains(_searchQuery);
+      final matchesCategory =
+          _categoryFilter == null || p.category == _categoryFilter;
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,19 +68,10 @@ class _InventoryPageState extends State<InventoryPage> {
           final categories = allProducts.map((p) => p.category).toSet().toList()
             ..sort();
 
-          final products = allProducts.where((p) {
-            final matchesSearch =
-                _searchQuery.isEmpty ||
-                p.name.toLowerCase().contains(_searchQuery) ||
-                p.barcode.toLowerCase().contains(_searchQuery) ||
-                p.category.toLowerCase().contains(_searchQuery);
-            final matchesCategory =
-                _categoryFilter == null || p.category == _categoryFilter;
-            return matchesSearch && matchesCategory;
-          }).toList();
+          final products = _filterProducts(allProducts);
 
           if (allProducts.isEmpty) {
-            return _EmptyState();
+            return const _EmptyState();
           }
 
           return CustomScrollView(
@@ -245,6 +249,8 @@ class _InventoryPageState extends State<InventoryPage> {
 
 /// Empty state with earthy illustration.
 class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
   @override
   Widget build(BuildContext context) {
     return Center(

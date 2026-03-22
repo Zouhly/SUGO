@@ -105,7 +105,7 @@ flutter test --coverage
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 lib/
