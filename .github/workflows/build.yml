@@ -24,6 +24,12 @@ jobs:
       - name: Decode firebase_options.dart
         run: echo "${{ secrets.FIREBASE_OPTIONS_DART }}" | base64 --decode > lib/firebase_options.dart
 
+      - name: Verify decoded files
+        run: |
+          echo "google-services.json size: $(wc -c < android/app/google-services.json) bytes"
+          echo "firebase_options.dart size: $(wc -c < lib/firebase_options.dart) bytes"
+          ls -la lib/firebase_options.dart
+
       - name: Install dependencies
         run: flutter pub get
 
